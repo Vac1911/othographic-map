@@ -1,0 +1,57 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+const {execCmd} = require('../tileserver/utils');
+init();
+
+/**
+* Check if port is being used
+* @param port {Number}
+* @return {String|false} Get pid using the port, or false if the port is open
+*/
+function checkPort(port) {
+  const execSync = require("child_process").execSync;
+  try {
+    return execSync(`lsof -t -i:${port}`).toString();
+  } catch (error) {
+    error.status; // Might be 127 in your example.
+    error.message; // Holds the message you typically want.
+    error.stderr; // Holds the stderr output. Use `.toString()`.
+    error.stdout; // Holds the stdout output. Use `.toString()`.
+    return false;
+  }
+}
+
+/**
+  * Normalize a port into a number, string, or false.
+  */
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+async function init() {
+  const port = normalizePort(process.env.PORT || '3001');
+  const portUsedBy = checkPort(port);
+  if (portUsedBy) {
+    let output = await execCmd(`kill -9 ${portUsedBy.trim()}`);
+    console.log(`Port ${port} - Cleared`);
+  }
+  else {
+    console.log(`Port ${port} Already Clear`);
+  }
+}

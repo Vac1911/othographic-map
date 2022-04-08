@@ -1,0 +1,142 @@
+#!/usr/bin/env node
+
+const utils = require("../tileserver/utils");
+
+const colorUtils = require("../tileserver/color/utils");
+
+const path = require("path");
+const chalk = require("chalk");
+const log = console.log;
+const sortBy = require("lodash/sortBy");
+const fs = require("fs");
+const Map = require("../tileserver/builder/map");
+
+const { Feature } = require("../tileserver/builder/feature");
+const { Marker } = require("../tileserver/builder/marker");
+
+const storagePath = path.resolve(__dirname, "../public/tilemap");
+const dataPath = path.resolve(__dirname, "../tileserver/data");
+let map;
+
+run();
+
+async function run() {
+  await compute();
+  await load();
+  await build();
+  await bit();
+}
+
+async function compute() {
+  log(chalk.bgYellow.bold.black(` Computing Data `));
+  const dataTempPath = dataPath + "/temp";
+  let msg = "",
+    input = dataPath + "/vector/nations.json",
+    output = dataTempPath + "/borders.json";
+  msg = await utils.execCmd(`mapshaper -i ${input} -innerlines -o ${output}`);
+  log(msg);
+
+  output = dataTempPath + "/land.json";
+  msg = await utils.execCmd(
+    `mapshaper -i ${input} -dissolve2 \\\n -explode -o ${output}`
+  );
+  log(msg);
+}
+
+async function load() {
+  log(chalk.bgBlue.bold.black(` Loading Features `));
+  const palette = {
+    river: "#78bced",
+    water: "#78bced",
+    land: "#ffebc2",
+    border: "#646464",
+    marker: "#000",
+  };
+
+  map = new Map(4, storagePath, { bgColor: palette.water });
+
+  const land = require("../tileserver/data/temp/land").geometries;
+  log(chalk.blue(`Loading Land`));
+  for (const feature of land) {
+    map.addFeature(
+      Feature.fromGeoJson(feature, { fillStyle: palette.land, name: "land" })
+    );
+  }
+
+  const rivers = require("../tileserver/data/vector/rivers.json").features;
+  log(chalk.blue(`Loading Rivers (${rivers.length})`));
+  for (const river of rivers) {
+    map.addFeature(
+      Feature.fromGeoJson(river, {
+        strokeStyle: palette.river,
+        lineWidth: 0.5,
+        name: "river",
+      })
+    );
+  }
+
+  const lakes = require("../tileserver/data/vector/lakes.json").features;
+  log(chalk.blue(`Loading Lakes (${lakes.length})`));
+  for (const lake of lakes) {
+    map.addFeature(
+      Feature.fromGeoJson(lake, { fillStyle: palette.water, name: "lake" })
+    );
+  }
+
+  const borders = require("../tileserver/data/temp/borders").geometries;
+  log(chalk.blue(`Loading Borders`));
+  for (const border of borders) {
+    map.addFeature(
+      Feature.fromGeoJson(border, {
+        strokeStyle: palette.border,
+        lineWidth: 1,
+        name: "border",
+      })
+    );
+  }
+
+  const cities = require("../tileserver/data/vector/cities").features.filter(
+    (f) => f.properties.scalerank === 0
+  );
+  log(chalk.blue(`Loading Cities (${cities.length})`));
+  for (const city of cities) {
+    map.addFeature(
+      Marker.fromGeoJson(city.geometry, {
+        fillStyle: palette.marker,
+        strokeStyle: palette.marker,
+        name: "city",
+      })
+    );
+  }
+}
+
+async function build() {
+  log("\n" + chalk.bold.bgGreen.black(` Starting Build `));
+  await map.run();
+}
+
+async function bit() {
+  log("\n" + chalk.bold.bgGreen.black(` Starting Bitmap `));
+  const nations = require("../tileserver/data/vector/nations.json").features;
+  let bitKey = Object.fromEntries(
+    sortBy(nations.map((n) => n.properties.NAME)).map((nation, i) => [
+      nation,
+      colorUtils.bitValue(i / nations.length, 1, 0.75),
+    ])
+  );
+
+  const bitmapDir = path.resolve(__dirname, "../public/bitmap");
+  let bitmap = new Map(2, bitmapDir, { antialias: "none" });
+  for (const nation of nations) {
+    bitmap.addFeature(
+      Feature.fromGeoJson(nation, {
+        fillStyle: bitKey[nation.properties.NAME],
+        name: "nations",
+      })
+    );
+  }
+  await bitmap.run();
+  await fs.writeFile(bitmapDir + "/key.json", JSON.stringify(bitKey), (err) => {
+    console.error(err);
+  });
+}
