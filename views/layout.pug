@@ -1,0 +1,11 @@
+doctype html
+html
+  head
+    title= title
+    link(rel='stylesheet', href='/css/styles.min.css')
+    link(rel='stylesheet', href='https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', async)
+    script(src='/js/components.js' async defered)
+    script(src='/js/leaflet.js' async defered)
+    block scripts
+  body
+    block content

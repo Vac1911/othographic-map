@@ -1,0 +1,6 @@
+extends layout
+
+block content
+  h1= title
+  layer-display(endpoint="/tilemap/{Z}/{X}/{Y}.png" zoom="2")
+  

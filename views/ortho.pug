@@ -1,0 +1,15 @@
+extends layout
+
+block scripts
+    script(src='/js/d3.js' async defered)
+    //- script(src='/js/webgl.js' async defered)
+
+block content
+    //h1= title
+    div#grid
+        div#topbar
+            div
+                //- button#circleMode.btn.btn-sm.btn-primary Circle
+        div#map
+            canvas#globe
+

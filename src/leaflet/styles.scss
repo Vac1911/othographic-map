@@ -1,0 +1,62 @@
+@import "bootstrap/scss/bootstrap";
+
+body {
+  font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  background: $dark;
+  color: $light;
+}
+
+.leaflet-cursor-icon {
+  border-radius: 50%;
+}
+
+.leaflet-tracker-icon {
+  border-radius: 50%;
+  background-color: red;
+}
+
+a {
+  color: #00b7ff;
+}
+
+#grid {
+  padding: 3rem;
+  min-height: 100vh;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: auto 1fr 1fr;
+  grid-template-areas:
+    "topbar topbar"
+    "map sidebar"
+    "map task";
+  > * {
+    background-color: $white;
+  }
+  #topbar {
+    grid-area: topbar;
+  }
+  #sidebar {
+    grid-area: sidebar;
+  }
+  #task {
+    grid-area: task;
+  }
+  #map {
+    grid-area: map;
+    height: 100%;
+  }
+  #leaflet {
+    height: 100%;
+    &[mode="none"] .leaflet-cursor-icon {
+      display: none;
+    }
+    &:not([mode="none"]) {
+      cursor: default;
+    }
+  }
+  #globe {
+    outline: 1px solid black;
+  }
+}

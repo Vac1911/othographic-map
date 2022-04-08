@@ -1,0 +1,17 @@
+extends layout
+
+block content
+    //h1= title
+    div#grid
+        div#topbar
+            div
+                button#createMode.btn.btn-sm.btn-primary Create
+                button#splitMode.btn.btn-sm.btn-warning Split
+                //- button#circleMode.btn.btn-sm.btn-primary Circle
+            div#mode
+        div#map
+            div#leaflet
+        div#sidebar
+        div#task
+            button.btn.btn-sm.btn-secondary(value="G-G-OLAGM-----X" geo-type="polyline") Main Attack
+            button.btn.btn-sm.btn-secondary(value="G-G-OLAGS-----X" geo-type="polyline") Supporting Attack
